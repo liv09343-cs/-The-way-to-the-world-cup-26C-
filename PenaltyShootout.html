@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026年美加墨世界杯 - 点球大战</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 2px solid #333;
+            background-color: #228b22;
+            cursor: crosshair;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .instructions {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>2026年美加墨世界杯 - 点球大战</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div class="controls">
+        <button id="startButton">开始游戏</button>
+        <button id="quitButton">退出游戏</button>
+    </div>
+    <div class="instructions">点击屏幕射门，根据点击位置控制角度和力度</div>
+
+    <script>
+        // 游戏状态枚举
+        const GameState = {
+            Ready: 0,      // 准备状态
+            Shooting: 1,   // 射门中
+            Saving: 2,     // 扑救中
+            Goal: 3,       // 进球
+            Miss: 4,       // 未进
+            Saved: 5       // 被扑出
+        };
+
+        // 点类
+        class Point {
+            constructor(x = 0, y = 0) {
+                this.x = x;
+                this.y = y;
+            }
+
+            add(other) {
+                return new Point(this.x + other.x, this.y + other.y);
+            }
+
+            addTo(other) {
+                this.x += other.x;
+                this.y += other.y;
+                return this;
+            }
+        }
+
+        // 游戏类
+        class Game {
+            constructor() {
+                this.state = GameState.Ready;
+                this.ballPosition = new Point(400, 400); // 点球点位置
+                this.goalkeeperPosition = new Point(400, 125); // 球门中间位置
+                this.ballVelocity = new Point(0, 0);
+                this.playerScore = 0;
+                this.computerScore = 0;
+                this.saveDirection = 0;
+                this.isPlayerTurn = true;
+                this.lastUpdateTime = Date.now();
+                this.resetTimer = null;
+            }
+
+            startGame() {
+                this.state = GameState.Ready;
+                this.ballPosition = new Point(400, 400);
+                this.goalkeeperPosition = new Point(400, 125);
+                this.ballVelocity = new Point(0, 0);
+                this.playerScore = 0;
+                this.computerScore = 0;
+                this.isPlayerTurn = true;
+                this.lastUpdateTime = Date.now();
+                if (this.resetTimer) {
+                    clearTimeout(this.resetTimer);
+                }
+            }
+
+            shoot(angle, power) {
+                if (this.state !== GameState.Ready) return;
+
+                this.state = GameState.Shooting;
+
+                // 计算球的初速度
+                this.ballVelocity.x = angle * 0.5;
+                this.ballVelocity.y = -power * 0.5;
+
+                // 守门员开始扑救
+                this.saveDirection = Math.floor(Math.random() * 3) - 1; // -1, 0, 1 分别代表左、中、右
+            }
+
+            update() {
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - this.lastUpdateTime) / 1000;
+                this.lastUpdateTime = currentTime;
+
+                if (this.state === GameState.Shooting) {
+                    // 更新球的位置
+                    this.ballPosition.addTo(this.ballVelocity);
+                    
+                    // 模拟重力
+                    this.ballVelocity.y += 0.5;
+
+                    // 更新守门员位置
+                    this.goalkeeperPosition.x += this.saveDirection * 5;
+                    
+                    // 限制守门员在球门范围内
+                    if (this.goalkeeperPosition.x < 300) {
+                        this.goalkeeperPosition.x = 300;
+                    } else if (this.goalkeeperPosition.x > 500) {
+                        this.goalkeeperPosition.x = 500;
+                    }
+
+                    // 检查球是否进入球门
+                    if (this.ballPosition.y < 200 && this.ballPosition.x > 300 && this.ballPosition.x < 500) {
+                        // 检查是否被守门员扑出
+                        if (Math.abs(this.ballPosition.x - this.goalkeeperPosition.x) < 30) {
+                            this.state = GameState.Saved;
+                        } else {
+                            this.state = GameState.Goal;
+                            if (this.isPlayerTurn) {
+                                this.playerScore++;
+                            } else {
+                                this.computerScore++;
+                            }
+                        }
+                    }
+                    // 检查球是否出界
+                    else if (this.ballPosition.y > 600 || this.ballPosition.x < 0 || this.ballPosition.x > 800) {
+                        this.state = GameState.Miss;
+                    }
+
+                    // 如果状态改变，重置游戏
+                    if (this.state === GameState.Goal || this.state === GameState.Miss || this.state === GameState.Saved) {
+                        // 等待2秒后重置
+                        this.resetTimer = setTimeout(() => {
+                            this.state = GameState.Ready;
+                            this.ballPosition = new Point(400, 400);
+                            this.goalkeeperPosition = new Point(400, 125);
+                            this.ballVelocity = new Point(0, 0);
+                            this.isPlayerTurn = !this.isPlayerTurn;
+                        }, 2000);
+                    }
+                }
+            }
+
+            getState() { return this.state; }
+            getBallPosition() { return this.ballPosition; }
+            getGoalkeeperPosition() { return this.goalkeeperPosition; }
+            getPlayerScore() { return this.playerScore; }
+            getComputerScore() { return this.computerScore; }
+        }
+
+        // 全局变量
+        const game = new Game();
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 绘制函数
+        function draw() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制足球场
+            ctx.fillStyle = '#228b22';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制球门
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(300, 50, 200, 150);
+
+            // 绘制点球点
+            ctx.beginPath();
+            ctx.arc(400, 400, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // 绘制2026年美加墨世界杯标志
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText('2026年美加墨世界杯', 30, 30);
+
+            // 绘制球
+            const ballPos = game.getBallPosition();
+            ctx.beginPath();
+            ctx.arc(ballPos.x, ballPos.y, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // 绘制守门员
+            const keeperPos = game.getGoalkeeperPosition();
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(keeperPos.x - 20, keeperPos.y - 30, 40, 60);
+
+            // 绘制比分
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px Arial';
+            ctx.fillText(`玩家: ${game.getPlayerScore()}`, 100, 50);
+            ctx.fillText(`电脑: ${game.getComputerScore()}`, 600, 50);
+
+            // 绘制游戏状态
+            ctx.font = '16px Arial';
+            switch (game.getState()) {
+                case GameState.Ready:
+                    ctx.fillText('准备就绪', 350, 300);
+                    break;
+                case GameState.Shooting:
+                    ctx.fillText('射门中...', 350, 300);
+                    break;
+                case GameState.Saving:
+                    ctx.fillText('扑救中...', 350, 300);
+                    break;
+                case GameState.Goal:
+                    ctx.fillText('进球！', 350, 300);
+                    break;
+                case GameState.Miss:
+                    ctx.fillText('未进！', 350, 300);
+                    break;
+                case GameState.Saved:
+                    ctx.fillText('被扑出！', 350, 300);
+                    break;
+            }
+        }
+
+        // 游戏主循环
+        function gameLoop() {
+            game.update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 事件监听
+        canvas.addEventListener('click', function(e) {
+            if (game.getState() === GameState.Ready) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                // 计算射门角度和力度
+                const angle = (x - 400) / 4;
+                const power = (600 - y) / 10;
+                game.shoot(angle, power);
+            }
+        });
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            game.startGame();
+        });
+
+        document.getElementById('quitButton').addEventListener('click', function() {
+            if (confirm('确定要退出游戏吗？')) {
+                window.close();
+            }
+        });
+
+        // 开始游戏循环
+        gameLoop();
+    </script>
+</body>
+</html>
