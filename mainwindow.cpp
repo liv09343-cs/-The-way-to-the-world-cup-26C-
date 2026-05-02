@@ -19,7 +19,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(gameTimer, &QTimer::timeout, this, &MainWindow::updateGame);
     connect(game, &Game::stateChanged, this, [=](Game::GameState state) {
-        // 处理游戏状态变化
+        update(); // 确保界面更新
+    });
+    connect(game, &Game::ballMoved, this, [=](QPointF pos) {
+        update(); // 球移动时更新界面
+    });
+    connect(game, &Game::goalkeeperMoved, this, [=](QPointF pos) {
+        update(); // 守门员移动时更新界面
     });
 
     // 手动连接信号和槽
@@ -63,6 +69,15 @@ void MainWindow::paintEvent(QPaintEvent *event)
     painter.setPen(QColor(255, 215, 0));
     painter.drawText(30, 30, "2026年美加墨世界杯");
 
+    // 绘制队伍信息
+    painter.setFont(QFont("Arial", 16));
+    painter.setPen(QColor(255, 255, 255));
+    painter.drawText(30, 70, QString("Group %1").arg(game->getGroup()));
+    painter.drawText(150, 70, QString("%1 vs %2").arg(game->getPlayerTeam()).arg(game->getComputerTeam()));
+
+    // 绘制回合信息
+    painter.drawText(width()/2 - 50, 70, QString("Round %1").arg(game->getRound()));
+
     // 绘制球
     QPointF ballPos = game->getBallPosition();
     painter.setBrush(QColor(255, 255, 255));
@@ -76,8 +91,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
     // 绘制比分
     painter.setPen(QColor(255, 255, 255));
     painter.setFont(QFont("Arial", 24));
-    painter.drawText(100, 50, QString("玩家: %1").arg(game->getPlayerScore()));
-    painter.drawText(width() - 200, 50, QString("电脑: %1").arg(game->getComputerScore()));
+    painter.drawText(100, 120, QString("%1: %2").arg(game->getPlayerTeam()).arg(game->getPlayerScore()));
+    painter.drawText(width() - 200, 120, QString("%1: %2").arg(game->getComputerTeam()).arg(game->getComputerScore()));
 
     // 绘制游戏状态
     painter.setFont(QFont("Arial", 16));
@@ -100,20 +115,49 @@ void MainWindow::paintEvent(QPaintEvent *event)
     case Game::Saved:
         painter.drawText(width()/2 - 50, height()/2, "被扑出！");
         break;
+    case Game::GameOver:
+        painter.drawText(width()/2 - 50, height()/2, QString("游戏结束！%1 获胜！").arg(game->getWinner()));
+        break;
     }
 
     // 绘制操作提示
     painter.setFont(QFont("Arial", 14));
-    painter.drawText(30, height() - 30, "点击屏幕射门，根据点击位置控制角度和力度");
+    if (game->getState() == Game::Ready) {
+        painter.drawText(30, height() - 30, "点击屏幕射门，根据点击位置控制角度和力度");
+    } else if (game->getState() == Game::GameOver) {
+        painter.drawText(30, height() - 30, "游戏结束，点击开始按钮重新开始");
+    }
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
 {
     if (game->getState() == Game::Ready) {
-        // 计算射门角度和力度
-        int angle = (event->position().x() - width()/2) / 4;
-        int power = (height() - event->position().y()) / 10;
-        game->shoot(angle, power);
+        // 获取当前回合的控制方
+        bool isPlayerTurn = game->getIsPlayerTurn();
+        
+        if (isPlayerTurn) {
+            // 玩家回合，玩家控制射门
+            int mouseX = event->position().x();
+            int mouseY = event->position().y();
+            
+            int angle = (mouseX - width()/2) / 4;
+            int power = (height() - mouseY) / 10;
+            game->shoot(angle, power);
+        } else {
+            // 电脑回合，玩家控制守门员扑救
+            int mouseX = event->position().x();
+            int direction = 0;
+            
+            if (mouseX < width()/2 - 50) {
+                direction = -1; // 向左扑救
+            } else if (mouseX > width()/2 + 50) {
+                direction = 1; // 向右扑救
+            } else {
+                direction = 0; // 中间扑救
+            }
+            
+            game->save(direction);
+        }
     }
 }
 
@@ -126,4 +170,19 @@ void MainWindow::on_startButton_clicked()
 void MainWindow::on_quitButton_clicked()
 {
     close();
+}
+
+void MainWindow::setTeams(const QString &playerTeam, const QString &computerTeam)
+{
+    game->setTeams(playerTeam, computerTeam);
+}
+
+void MainWindow::setGroup(const QString &group)
+{
+    game->setGroup(group);
+}
+
+void MainWindow::startGame()
+{
+    game->startGame();
 }

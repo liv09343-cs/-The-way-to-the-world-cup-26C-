@@ -18,6 +18,13 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void setTeams(const QString &playerTeam, const QString &computerTeam);
+    void setGroup(const QString &group);
+    void startGame();
+
+signals:
+    void backToStart();
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
