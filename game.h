@@ -11,13 +11,13 @@ class Game : public QObject
 
 public:
     enum GameState {
-        Ready,      // 准备状态
-        Shooting,   // 射门中
-        Saving,     // 扑救中
-        Goal,       // 进球
-        Miss,       // 未进
-        Saved,      // 被扑出
-        GameOver    // 游戏结束
+        Ready,
+        Shooting,
+        Saving,
+        Goal,
+        Miss,
+        Saved,
+        GameOver
     };
 
     explicit Game(QObject *parent = nullptr);
@@ -38,7 +38,6 @@ public:
     QString getComputerTeam() const;
     QString getGroup() const;
     int getRound() const;
-    bool isGameOver() const;
     QString getWinner() const;
     bool getIsPlayerTurn() const;
 
@@ -55,7 +54,7 @@ private slots:
     void updateGoalkeeperPosition();
 
 private:
-    void computerShoot();
+    bool canGameEndEarly();
 
     GameState state;
     QPointF ballPosition;
@@ -72,9 +71,6 @@ private:
     QString playerTeam;
     QString computerTeam;
     QString group;
-
-    void checkGameOver();
-    void startNextRound();
 };
 
 #endif // GAME_H

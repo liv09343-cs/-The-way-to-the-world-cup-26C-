@@ -3,30 +3,25 @@
 
 #include <QMainWindow>
 
-QT_BEGIN_NAMESPACE
 namespace Ui {
 class StartWindow;
 }
-QT_END_NAMESPACE
 
 class StartWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    StartWindow(QWidget *parent = nullptr);
+    explicit StartWindow(QWidget *parent = nullptr);
     ~StartWindow();
 
 signals:
-    void startGameClicked();
-    void exitClicked();
+    void startGame();
+    void exitGame();
 
 private slots:
     void on_startButton_clicked();
-    void on_exitButton_clicked();
-
-protected:
-    void paintEvent(QPaintEvent *event) override;
+    void on_quitButton_clicked();
 
 private:
     Ui::StartWindow *ui;
