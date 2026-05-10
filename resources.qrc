@@ -1,5 +1,52 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource>
-    <!-- 2026年美加墨世界杯相关资源 -->
-</qresource>
+<RCC>
+    <qresource prefix="/">
+        <file>flags/flag_Mexico.png</file>
+        <file>flags/flag_SouthAfrica.png</file>
+        <file>flags/flag_SouthKorea.png</file>
+        <file>flags/flag_Czech.png</file>
+        <file>flags/flag_Canada.png</file>
+        <file>flags/flag_Bosnia.png</file>
+        <file>flags/flag_Qatar.png</file>
+        <file>flags/flag_Switzerland.png</file>
+        <file>flags/flag_Brazil.png</file>
+        <file>flags/flag_Morocco.png</file>
+        <file>flags/flag_Haiti.png</file>
+        <file>flags/flag_Scotland.png</file>
+        <file>flags/flag_USA.png</file>
+        <file>flags/flag_Paraguay.png</file>
+        <file>flags/flag_Australia.png</file>
+        <file>flags/flag_Turkey.png</file>
+        <file>flags/flag_Germany.png</file>
+        <file>flags/flag_Curacao.png</file>
+        <file>flags/flag_CoteDIvoire.png</file>
+        <file>flags/flag_Ecuador.png</file>
+        <file>flags/flag_Netherlands.png</file>
+        <file>flags/flag_Japan.png</file>
+        <file>flags/flag_Sweden.png</file>
+        <file>flags/flag_Tunisia.png</file>
+        <file>flags/flag_Belgium.png</file>
+        <file>flags/flag_Egypt.png</file>
+        <file>flags/flag_Iran.png</file>
+        <file>flags/flag_NewZealand.png</file>
+        <file>flags/flag_Spain.png</file>
+        <file>flags/flag_CapeVerde.png</file>
+        <file>flags/flag_SaudiArabia.png</file>
+        <file>flags/flag_Uruguay.png</file>
+        <file>flags/flag_France.png</file>
+        <file>flags/flag_Senegal.png</file>
+        <file>flags/flag_Iraq.png</file>
+        <file>flags/flag_Norway.png</file>
+        <file>flags/flag_Argentina.png</file>
+        <file>flags/flag_Algeria.png</file>
+        <file>flags/flag_Austria.png</file>
+        <file>flags/flag_Jordan.png</file>
+        <file>flags/flag_Portugal.png</file>
+        <file>flags/flag_DRCongo.png</file>
+        <file>flags/flag_Uzbekistan.png</file>
+        <file>flags/flag_Colombia.png</file>
+        <file>flags/flag_England.png</file>
+        <file>flags/flag_Croatia.png</file>
+        <file>flags/flag_Ghana.png</file>
+        <file>flags/flag_Panama.png</file>
+    </qresource>
 </RCC>

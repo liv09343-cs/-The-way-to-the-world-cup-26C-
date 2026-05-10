@@ -12,17 +12,25 @@ SOURCES += \
         game.cpp \
         mainwindow.cpp \
         startwindow.cpp \
-        teamselectwindow.cpp
+        teamselectwindow.cpp \
+        worldcupmanager.cpp \
+        resultwindow.cpp
 
 HEADERS += \
         game.h \
         mainwindow.h \
         startwindow.h \
-        teamselectwindow.h
+        teamselectwindow.h \
+        worldcupmanager.h \
+        resultwindow.h
 
 FORMS += \
         mainwindow.ui \
         startwindow.ui \
-        teamselectwindow.ui
+        teamselectwindow.ui \
+        resultwindow.ui
+
+RESOURCES += \
+        resources.qrc
 
 QMAKE_CXXFLAGS += -std=c++17

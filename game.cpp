@@ -20,6 +20,16 @@ Game::Game(QObject *parent) : QObject(parent)
     connect(goalkeeperTimer, &QTimer::timeout, this, &Game::updateGoalkeeperPosition);
 }
 
+const QList<bool>& Game::getPlayerShootHistory() const
+{
+    return playerShootHistory;
+}
+
+const QList<bool>& Game::getComputerShootHistory() const
+{
+    return computerShootHistory;
+}
+
 Game::~Game()
 {
     delete ballTimer;
@@ -37,6 +47,10 @@ void Game::startGame()
     round = 1;
     isOvertime = false;
     isPlayerTurn = true;
+    
+    playerShootHistory.clear();
+    computerShootHistory.clear();
+    
     emit stateChanged(state);
     emit ballMoved(ballPosition);
     emit goalkeeperMoved(goalkeeperPosition);
@@ -51,13 +65,15 @@ void Game::shoot(int angle, int power)
     state = Shooting;
     emit stateChanged(state);
 
-    ballVelocity.setX(angle * 0.5);
-    ballVelocity.setY(-power * 0.5);
+    double speed = 20.0;
+    double angleRad = angle * 3.14159 / 180.0;
+    ballVelocity.setX(speed * sin(angleRad));
+    ballVelocity.setY(-speed * cos(angleRad));
 
-    ballTimer->start(30);
+    ballTimer->start(10);
 
     saveDirection = QRandomGenerator::global()->bounded(3) - 1;
-    goalkeeperTimer->start(30);
+    goalkeeperTimer->start(20);
 }
 
 void Game::save(int direction)
@@ -93,7 +109,7 @@ void Game::save(int direction)
     double dy = 100 - 400;
     double distance = sqrt(dx * dx + dy * dy);
 
-    double speed = 30.0;
+    double speed = 20.0;
     ballVelocity.setX(dx / distance * speed);
     ballVelocity.setY(dy / distance * speed);
 
@@ -136,13 +152,13 @@ bool Game::getIsPlayerTurn() const { return isPlayerTurn; }
 
 bool Game::canGameEndEarly()
 {
-    int maxRounds = isOvertime ? round : 5;
-    int remainingRounds = maxRounds - round + 1;
-    
-    int playerMaxPossible = playerScore + remainingRounds;
-    int computerMaxPossible = computerScore + remainingRounds;
-    
-    return playerMaxPossible < computerScore || computerMaxPossible < playerScore;
+    if (!isOvertime && round < 5) {
+        int remainingRounds = 5 - round;
+        int playerMaxPossible = playerScore + remainingRounds;
+        int computerMaxPossible = computerScore + remainingRounds;
+        return playerMaxPossible < computerScore || computerMaxPossible < playerScore;
+    }
+    return false;
 }
 
 void Game::updateBallPosition()
@@ -153,10 +169,20 @@ void Game::updateBallPosition()
     if (ballPosition.y() < 150 && ballPosition.x() > 300 && ballPosition.x() < 500) {
         if (qAbs(ballPosition.x() - goalkeeperPosition.x()) < 35) {
             state = Saved;
+            if (isPlayerTurn) {
+                playerShootHistory.append(false);
+            } else {
+                computerShootHistory.append(false);
+            }
         } else {
             state = Goal;
-            if (isPlayerTurn) playerScore++;
-            else computerScore++;
+            if (isPlayerTurn) {
+                playerScore++;
+                playerShootHistory.append(true);
+            } else {
+                computerScore++;
+                computerShootHistory.append(true);
+            }
             emit scoreUpdated(playerScore, computerScore);
         }
         ballTimer->stop();
@@ -178,9 +204,21 @@ void Game::updateBallPosition()
                         return;
                     }
                     isOvertime = true;
+                    round = 1;
+                    emit roundUpdated(round);
+                } else if (isOvertime) {
+                    if (playerScore != computerScore) {
+                        state = GameOver;
+                        emit stateChanged(state);
+                        emit gameOver(getWinner());
+                        return;
+                    }
+                    round++;
+                    emit roundUpdated(round);
+                } else {
+                    round++;
+                    emit roundUpdated(round);
                 }
-                round++;
-                emit roundUpdated(round);
             }
 
             state = Ready;
@@ -214,9 +252,21 @@ void Game::updateBallPosition()
                         return;
                     }
                     isOvertime = true;
+                    round = 1;
+                    emit roundUpdated(round);
+                } else if (isOvertime) {
+                    if (playerScore != computerScore) {
+                        state = GameOver;
+                        emit stateChanged(state);
+                        emit gameOver(getWinner());
+                        return;
+                    }
+                    round++;
+                    emit roundUpdated(round);
+                } else {
+                    round++;
+                    emit roundUpdated(round);
                 }
-                round++;
-                emit roundUpdated(round);
             }
 
             state = Ready;

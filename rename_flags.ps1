@@ -1,0 +1,66 @@
+$renameMap = @{
+    "墨西哥" = "Mexico"
+    "南非" = "SouthAfrica"
+    "韩国" = "SouthKorea"
+    "捷克" = "Czech"
+    "加拿大" = "Canada"
+    "波黑" = "Bosnia"
+    "卡塔尔" = "Qatar"
+    "瑞士" = "Switzerland"
+    "巴西" = "Brazil"
+    "摩洛哥" = "Morocco"
+    "海地" = "Haiti"
+    "苏格兰" = "Scotland"
+    "美国" = "USA"
+    "巴拉圭" = "Paraguay"
+    "澳大利亚" = "Australia"
+    "土耳其" = "Turkey"
+    "德国" = "Germany"
+    "库拉索" = "Curacao"
+    "科特迪瓦" = "CoteDIvoire"
+    "厄瓜多尔" = "Ecuador"
+    "荷兰" = "Netherlands"
+    "日本" = "Japan"
+    "瑞典" = "Sweden"
+    "突尼斯" = "Tunisia"
+    "比利时" = "Belgium"
+    "埃及" = "Egypt"
+    "伊朗" = "Iran"
+    "新西兰" = "NewZealand"
+    "西班牙" = "Spain"
+    "佛得角" = "CapeVerde"
+    "沙特" = "SaudiArabia"
+    "乌拉圭" = "Uruguay"
+    "法国" = "France"
+    "塞内加尔" = "Senegal"
+    "伊拉克" = "Iraq"
+    "挪威" = "Norway"
+    "阿根廷" = "Argentina"
+    "阿尔及利亚" = "Algeria"
+    "奥地利" = "Austria"
+    "约旦" = "Jordan"
+    "葡萄牙" = "Portugal"
+    "民主刚果" = "DRCongo"
+    "乌兹别克斯坦" = "Uzbekistan"
+    "哥伦比亚" = "Colombia"
+    "英格兰" = "England"
+    "克罗地亚" = "Croatia"
+    "加纳" = "Ghana"
+    "巴拿马" = "Panama"
+}
+
+$flagsDir = "flags"
+Get-ChildItem -Path $flagsDir -Filter "flag_*.png" | ForEach-Object {
+    $baseName = $_.BaseName
+    $chineseName = $baseName -replace "^flag_", ""
+    if ($renameMap.ContainsKey($chineseName)) {
+        $englishName = $renameMap[$chineseName]
+        $newName = "flag_$englishName.png"
+        Write-Host "Renaming $($_.Name) to $newName"
+        Rename-Item -Path $_.FullName -NewName $newName
+    } else {
+        Write-Host "No mapping for $chineseName"
+    }
+}
+
+Write-Host "Done!"

@@ -71,6 +71,13 @@ private:
     QString playerTeam;
     QString computerTeam;
     QString group;
+    
+    QList<bool> playerShootHistory;
+    QList<bool> computerShootHistory;
+    
+public:
+    const QList<bool>& getPlayerShootHistory() const;
+    const QList<bool>& getComputerShootHistory() const;
 };
 
 #endif // GAME_H
