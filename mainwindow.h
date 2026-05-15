@@ -34,6 +34,7 @@ private slots:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
 
 private:
     Ui::MainWindow *ui;
@@ -42,6 +43,8 @@ private:
     
     QPixmap playerFlag;
     QPixmap computerFlag;
+    QPixmap goalkeeperPixmap;
+    QPixmap backgroundPixmap;
     
     static const QMap<QString, QString> CHINESE_TO_ENGLISH;
     

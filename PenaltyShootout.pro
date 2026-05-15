@@ -14,7 +14,10 @@ SOURCES += \
         startwindow.cpp \
         teamselectwindow.cpp \
         worldcupmanager.cpp \
-        resultwindow.cpp
+        resultwindow.cpp \
+        storyselectwindow.cpp \
+        storyscenewindow.cpp \
+        matchresultwindow.cpp
 
 HEADERS += \
         game.h \
@@ -22,13 +25,19 @@ HEADERS += \
         startwindow.h \
         teamselectwindow.h \
         worldcupmanager.h \
-        resultwindow.h
+        resultwindow.h \
+        storyselectwindow.h \
+        storyscenewindow.h \
+        matchresultwindow.h
 
 FORMS += \
         mainwindow.ui \
         startwindow.ui \
         teamselectwindow.ui \
-        resultwindow.ui
+        resultwindow.ui \
+        storyselectwindow.ui \
+        storyscenewindow.ui \
+        matchresultwindow.ui
 
 RESOURCES += \
         resources.qrc

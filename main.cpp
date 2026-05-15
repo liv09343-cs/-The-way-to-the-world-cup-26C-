@@ -3,6 +3,9 @@
 #include "teamselectwindow.h"
 #include "mainwindow.h"
 #include "resultwindow.h"
+#include "storyselectwindow.h"
+#include "storyscenewindow.h"
+#include "matchresultwindow.h"
 #include <QRandomGenerator>
 #include <algorithm>
 
@@ -14,6 +17,10 @@ int main(int argc, char *argv[])
     TeamSelectWindow *teamSelectWindow = new TeamSelectWindow();
     MainWindow *mainWindow = new MainWindow();
     ResultWindow *resultWindow = new ResultWindow();
+    
+    StorySelectWindow *storySelectWindow = new StorySelectWindow();
+    StorySceneWindow *storySceneWindow = new StorySceneWindow();
+    MatchResultWindow *matchResultWindow = new MatchResultWindow();
 
     QString selectedTeam;
     QStringList groupOpponents;
@@ -22,6 +29,13 @@ int main(int argc, char *argv[])
     int playerLosses = 0;
     int knockoutRound = 0;
     bool inGroupStage = true;
+    bool inStoryMode = false;
+    int currentStoryScene = 0;
+    
+    QStringList storyGroupOpponents = {"比利时", "埃及", "新西兰"};
+    QStringList storyKnockoutOpponents = {"西班牙", "阿根廷", "葡萄牙", "日本", "法国"};
+    int storyMatchIndex = 0;
+    bool storyQualified = false;
 
     QString stageNames[] = {"32强", "16强", "8强", "半决赛", "决赛"};
 
@@ -83,8 +97,98 @@ int main(int argc, char *argv[])
         mainWindow->startGame();
     };
 
+    auto startNextStoryMatch = [&]() {
+        if (!storyQualified) {
+            if (storyMatchIndex < storyGroupOpponents.size()) {
+                QString opponent = storyGroupOpponents[storyMatchIndex];
+                mainWindow->setTeams("中国队", opponent);
+                mainWindow->show();
+                mainWindow->startGame();
+            } else {
+                if (playerWins > 0) {
+                    storyQualified = true;
+                    matchResultWindow->setResult(true, QString("恭喜！中国队以 %1 胜 %2 负晋级淘汰赛！").arg(playerWins).arg(playerLosses), 10);
+                    matchResultWindow->show();
+                } else {
+                    matchResultWindow->setResult(false, "很遗憾！中国队小组赛全败，未能出线...", 11);
+                    matchResultWindow->show();
+                }
+            }
+        } else {
+            if (knockoutRound < storyKnockoutOpponents.size()) {
+                QString opponent = storyKnockoutOpponents[knockoutRound];
+                mainWindow->setTeams("中国队", opponent);
+                mainWindow->show();
+                mainWindow->startGame();
+            }
+        }
+    };
+
     QObject::connect(startWindow, SIGNAL(startGame()), teamSelectWindow, SLOT(show()));
     QObject::connect(startWindow, SIGNAL(exitGame()), &a, SLOT(quit()));
+    
+    QObject::connect(startWindow, &StartWindow::startStory, [&]() {
+        startWindow->hide();
+        storySelectWindow->show();
+    });
+
+    QObject::connect(storySelectWindow, &StorySelectWindow::backClicked, [&]() {
+        storySelectWindow->hide();
+        startWindow->show();
+    });
+
+    QObject::connect(storySelectWindow, &StorySelectWindow::storySelected, [&](int storyId) {
+        storySelectWindow->hide();
+        inStoryMode = true;
+        currentStoryScene = 1;
+        storySceneWindow->setScene(1);
+        storySceneWindow->show();
+    });
+
+    QObject::connect(storySceneWindow, &StorySceneWindow::nextScene, [&]() {
+        currentStoryScene++;
+        storySceneWindow->setScene(currentStoryScene);
+    });
+
+    QObject::connect(storySceneWindow, &StorySceneWindow::startMatch, [&](const QString &playerTeam, const QString &computerTeam) {
+        storySceneWindow->hide();
+        playerWins = 0;
+        playerLosses = 0;
+        knockoutRound = 0;
+        storyMatchIndex = 0;
+        storyQualified = false;
+        mainWindow->setTeams(playerTeam, computerTeam);
+        mainWindow->show();
+        mainWindow->startGame();
+    });
+
+    QObject::connect(matchResultWindow, &MatchResultWindow::continueGame, [&]() {
+        matchResultWindow->hide();
+        if (!storyQualified) {
+            if (storyMatchIndex >= storyGroupOpponents.size()) {
+                if (playerWins > 0) {
+                    matchResultWindow->setResult(true, QString("恭喜！中国队以 %1 胜 %2 负晋级淘汰赛！").arg(playerWins).arg(playerLosses), 10);
+                    storyQualified = true;
+                    knockoutRound = 0;
+                } else {
+                    matchResultWindow->setResult(false, "很遗憾！中国队小组赛全败，未能出线...", 11);
+                }
+                matchResultWindow->show();
+            } else {
+                QString opponent = storyGroupOpponents[storyMatchIndex];
+                mainWindow->setTeams("中国队", opponent);
+                mainWindow->show();
+                mainWindow->startGame();
+            }
+        } else {
+            startNextStoryMatch();
+        }
+    });
+
+    QObject::connect(matchResultWindow, &MatchResultWindow::exitStory, [&]() {
+        matchResultWindow->hide();
+        startWindow->show();
+    });
 
     QObject::connect(teamSelectWindow, &TeamSelectWindow::teamSelected, [&](const QString &team, const QString &group) {
         selectedTeam = team;
@@ -102,6 +206,7 @@ int main(int argc, char *argv[])
         playerLosses = 0;
         knockoutRound = 0;
         inGroupStage = true;
+        inStoryMode = false;
         startNextGroupMatch();
     });
 
@@ -109,39 +214,72 @@ int main(int argc, char *argv[])
         mainWindow->hide();
         QString opponent = mainWindow->getGame()->getComputerTeam();
 
-        if (inGroupStage) {
-            if (winner == selectedTeam) {
-                playerWins++;
-                resultWindow->setResult("比赛胜利！", QString("恭喜您的球队 %1 击败了 %2！").arg(selectedTeam).arg(opponent), selectedTeam);
-            } else {
-                playerLosses++;
-                resultWindow->setResult("比赛失利", QString("很遗憾，%1 输给了 %2").arg(selectedTeam).arg(opponent), selectedTeam);
-            }
-            resultWindow->exec();
-            startNextGroupMatch();
-        } else {
-            knockoutRound++;
-            if (winner == selectedTeam) {
-                if (knockoutRound >= 5) {
-                    resultWindow->setResult("冠军！", QString("恭喜%1 获得2026年美加墨世界杯冠军！").arg(selectedTeam), selectedTeam);
-                    resultWindow->exec();
+        if (inStoryMode) {
+            int currentMatchIndex = 0;
+            if (!storyQualified) {
+                currentMatchIndex = storyMatchIndex + 1;
+                if (winner == "中国队") {
+                    playerWins++;
+                    matchResultWindow->setResult(true, QString("胜利！中国队击败 %1！").arg(opponent), currentMatchIndex);
                 } else {
-                    resultWindow->setResult(QString("恭喜晋级%1！").arg(stageNames[knockoutRound]), QString("%1 在%2淘汰赛中击败 %3，成功晋级！").arg(selectedTeam).arg(stageNames[knockoutRound-1]).arg(opponent), selectedTeam);
-                    resultWindow->exec();
-                    startKnockoutMatch();
+                    playerLosses++;
+                    matchResultWindow->setResult(false, QString("失利！中国队输给了 %1").arg(opponent), currentMatchIndex);
                 }
+                storyMatchIndex++;
             } else {
-                if (knockoutRound == 4) {
-                    bool thirdPlace = QRandomGenerator::global()->bounded(2) == 0;
-                    if (thirdPlace) {
-                        resultWindow->setResult("季军", QString("%1 获得2026年美加墨世界杯季军！").arg(selectedTeam), selectedTeam);
+                currentMatchIndex = storyGroupOpponents.size() + knockoutRound + 1;
+                if (winner == "中国队") {
+                    knockoutRound++;
+                    if (knockoutRound >= storyKnockoutOpponents.size()) {
+                        matchResultWindow->setResult(true, "恭喜！中国队获得2026年美加墨世界杯冠军！", currentMatchIndex);
                     } else {
-                        resultWindow->setResult("第四名", QString("%1 获得2026年美加墨世界杯第四名").arg(selectedTeam), selectedTeam);
+                        matchResultWindow->setResult(true, QString("胜利！中国队晋级%1！").arg(stageNames[knockoutRound]), currentMatchIndex);
                     }
-                    resultWindow->exec();
                 } else {
-                    resultWindow->setResult(QString("止步%1").arg(stageNames[knockoutRound-1]), QString("%1 在%2淘汰赛中被 %3 淘汰").arg(selectedTeam).arg(stageNames[knockoutRound-1]).arg(opponent), selectedTeam);
-                    resultWindow->exec();
+                    knockoutRound++;
+                    if (knockoutRound == 4) {
+                        matchResultWindow->setResult(false, "虽败犹荣！中国队获得世界杯亚军！", currentMatchIndex);
+                    } else {
+                        matchResultWindow->setResult(false, QString("遗憾出局！中国队止步%1").arg(stageNames[knockoutRound-1]), currentMatchIndex);
+                    }
+                }
+            }
+            matchResultWindow->show();
+        } else {
+            if (inGroupStage) {
+                if (winner == selectedTeam) {
+                    playerWins++;
+                    resultWindow->setResult("比赛胜利！", QString("恭喜您的球队 %1 击败了 %2！").arg(selectedTeam).arg(opponent), selectedTeam);
+                } else {
+                    playerLosses++;
+                    resultWindow->setResult("比赛失利", QString("很遗憾，%1 输给了 %2").arg(selectedTeam).arg(opponent), selectedTeam);
+                }
+                resultWindow->exec();
+                startNextGroupMatch();
+            } else {
+                knockoutRound++;
+                if (winner == selectedTeam) {
+                    if (knockoutRound >= 5) {
+                        resultWindow->setResult("冠军！", QString("恭喜%1 获得2026年美加墨世界杯冠军！").arg(selectedTeam), selectedTeam);
+                        resultWindow->exec();
+                    } else {
+                        resultWindow->setResult(QString("恭喜晋级%1！").arg(stageNames[knockoutRound]), QString("%1 在%2淘汰赛中击败 %3，成功晋级！").arg(selectedTeam).arg(stageNames[knockoutRound-1]).arg(opponent), selectedTeam);
+                        resultWindow->exec();
+                        startKnockoutMatch();
+                    }
+                } else {
+                    if (knockoutRound == 4) {
+                        bool thirdPlace = QRandomGenerator::global()->bounded(2) == 0;
+                        if (thirdPlace) {
+                            resultWindow->setResult("季军", QString("%1 获得2026年美加墨世界杯季军！").arg(selectedTeam), selectedTeam);
+                        } else {
+                            resultWindow->setResult("第四名", QString("%1 获得2026年美加墨世界杯第四名").arg(selectedTeam), selectedTeam);
+                        }
+                        resultWindow->exec();
+                    } else {
+                        resultWindow->setResult(QString("止步%1").arg(stageNames[knockoutRound-1]), QString("%1 在%2淘汰赛中被 %3 淘汰").arg(selectedTeam).arg(stageNames[knockoutRound-1]).arg(opponent), selectedTeam);
+                        resultWindow->exec();
+                    }
                 }
             }
         }

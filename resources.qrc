@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file>flags/flag_China.png</file>
         <file>flags/flag_Mexico.png</file>
         <file>flags/flag_SouthAfrica.png</file>
         <file>flags/flag_SouthKorea.png</file>

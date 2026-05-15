@@ -12,6 +12,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QMap>
+#include <QPainter>
 
 const QStringList TeamSelectWindow::GROUP_LETTERS = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"};
 
@@ -51,7 +52,21 @@ TeamSelectWindow::TeamSelectWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     setFixedSize(800, 600);
-    setStyleSheet("background-color: #006400;");
+    
+    ui->centralwidget->setStyleSheet("");
+    ui->scrollAreaWidgetContents->setStyleSheet("");
+    
+    QStringList backgroundPaths = {
+        QCoreApplication::applicationDirPath() + "/background_teamselect.png",
+        "c:/Users/spong/Documents/trae_projects/world-cup/background_teamselect.png",
+        "c:/Users/spong/Desktop/background_teamselect.png"
+    };
+    
+    for (const QString& path : backgroundPaths) {
+        if (backgroundPixmap.load(path)) {
+            break;
+        }
+    }
 
     QGridLayout *gridLayout = qobject_cast<QGridLayout*>(ui->scrollAreaWidgetContents->layout());
     
@@ -59,7 +74,10 @@ TeamSelectWindow::TeamSelectWindow(QWidget *parent) :
         gridLayout = new QGridLayout(ui->scrollAreaWidgetContents);
         ui->scrollAreaWidgetContents->setLayout(gridLayout);
     }
-    ui->scrollAreaWidgetContents->setStyleSheet("background-color: #006400;");
+    
+    ui->scrollArea->setStyleSheet("background: transparent;");
+    ui->scrollArea->viewport()->setStyleSheet("background: transparent;");
+    ui->scrollAreaWidgetContents->setStyleSheet("background: transparent;");
 
     QString flagsPath = "c:/Users/spong/Documents/trae_projects/world-cup/flags/";
     qDebug() << "Flags path:" << flagsPath;
@@ -119,16 +137,17 @@ TeamSelectWindow::TeamSelectWindow(QWidget *parent) :
             
             QWidget *buttonContent = new QWidget();
             buttonContent->setLayout(buttonLayout);
+            buttonContent->setStyleSheet("background: transparent;");
             teamButton->setLayout(buttonLayout);
             
             teamButton->setStyleSheet(
                 "QPushButton {"
                 "    border-radius: 5px;"
                 "    border: 2px solid #FFD700;"
-                "    background-color: #008000;"
+                "    background: transparent;"
                 "}"
                 "QPushButton:hover {"
-                "    background-color: #00A000;"
+                "    background: rgba(255, 215, 0, 0.3);"
                 "}"
             );
             teamButton->setMinimumSize(140, 45);
@@ -143,6 +162,24 @@ TeamSelectWindow::TeamSelectWindow(QWidget *parent) :
 TeamSelectWindow::~TeamSelectWindow()
 {
     delete ui;
+}
+
+void TeamSelectWindow::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+    QPainter painter(this);
+    
+    if (!backgroundPixmap.isNull()) {
+        painter.drawPixmap(0, 0, width(), height(), backgroundPixmap);
+    } else {
+        painter.setBrush(QColor(34, 139, 34));
+        painter.drawRect(0, 0, width(), height());
+    }
+}
+
+void TeamSelectWindow::on_backButton_clicked()
+{
+    emit backClicked();
 }
 
 void TeamSelectWindow::onTeamButtonClicked()

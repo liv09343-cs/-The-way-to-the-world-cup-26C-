@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QGridLayout>
 #include <QMap>
+#include <QPixmap>
 
 namespace Ui {
 class TeamSelectWindow;
@@ -19,12 +20,18 @@ public:
 
 signals:
     void teamSelected(const QString &team, const QString &group);
+    void backClicked();
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
 
 private slots:
     void onTeamButtonClicked();
+    void on_backButton_clicked();
 
 private:
     Ui::TeamSelectWindow *ui;
+    QPixmap backgroundPixmap;
 
     static const QStringList GROUP_LETTERS;
     static const QList<QStringList> TEAMS_BY_GROUP;
